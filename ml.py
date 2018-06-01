@@ -27,6 +27,7 @@ load_adv_data(adv_data_name)
 def load_adv_data(adv_data_name):
     adv_data_df = pd.read_csv(adv_data_name)
     adv_data_df['County'] = adv_data_df['County'].str.replace(" ","")
+    adv_data_df['Ethnicity'] = adv_data_df['Ethnicity'].str.replace(" ","")
     adv_data_df = adv_data_df[adv_data_df['TotalIncome'] != 0]
     adv_data_df['County'].replace('',np.nan, inplace=True)
     adv_data_df.dropna(subset=['County'],inplace=True)
@@ -67,7 +68,9 @@ create_feature_arr(adv_data_df, county_level_df)
 def create_feature_arr(adv_data_df, county_level_df):
     number_of_features = 6
     feature_arr = np.zeros((adv_data_df.shape[0],number_of_features), np.int32)
+    print adv_data_df.shape
     for index, row in adv_data_df.iterrows():
+        print row
         feature_arr.put(index*number_of_features, int((county_level_df.query('state_id == \'' + str(row[11]) + '\' and county == \'' + str(row[10]) +'\'').iloc[0]['median_income']).replace(',','')))
         feature_arr.put(index*number_of_features + 1, float((county_level_df.query('state_id == \'' + str(row[11]) + '\' and county == \'' + str(row[10]) +'\'').iloc[0]['poverty_percent']).replace(',','')))
     feature_arr[:,2]=adv_data_df['Sex']
@@ -90,8 +93,8 @@ split_arrs(feature_arr, value_arr)
     Returns a tuple containing training and testing subsets of both arrays.
 """
 def split_arrs(feature_arr, value_arr):
-    feature_train_arr, feature_test_arr = np.split(feature_arr,[300])
-    value_train_arr, value_test_arr = np.split(value_arr,[300])
+    feature_train_arr, feature_test_arr = np.split(feature_arr,[3000])
+    value_train_arr, value_test_arr = np.split(value_arr,[3000])
     print feature_train_arr.shape
     print feature_test_arr.shape
     return (feature_train_arr, value_train_arr, feature_test_arr, value_test_arr)
@@ -128,12 +131,12 @@ def knn_model(arr_tuple):
     print score
 
 def main():
-    adv_data_df,county_level_df = load_data("Medicaid_Most_Recent_1000.txt", "est16all.csv")
+    adv_data_df,county_level_df = load_data("10KData.csv", "est16all.csv")
     feature_arr = create_feature_arr(adv_data_df, county_level_df)
     value_arr = create_value_arr(adv_data_df)
     arr_tuple = split_arrs(feature_arr, value_arr)
-    create_coord_array(adv_data_df)
-    #knn_model(arr_tuple)
+    #create_coord_array(adv_data_df)
+    knn_model(arr_tuple)
     #sgd_model(arr_tuple)
     #plot_visualization(feature_arr, value_arr)
     #gaussian_naive_bayes(arr_tuple)
