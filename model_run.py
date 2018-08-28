@@ -7,7 +7,7 @@ from sklearn.neighbors import KNeighborsRegressor
 
 
 def lat_lng(street, city, state):
-	gmaps = googlemaps.Client(key='AIzaSyBuHPwVk8twRke7pX2fg26lGQLjq1y7Myw')
+	gmaps = googlemaps.Client(key='')
 	latlng = gmaps.geocode(street + ", " + city + ", " + state)[0]['geometry']['location']
 	return latlng['lat'], latlng['lng']
 
@@ -27,12 +27,18 @@ def main():
 	parser.add_argument("city", help="The patient's city")
 	parser.add_argument("county", help="The patient's county, including the word county, e.g. \"Hamilton County\". Must be inside quotations")
 	parser.add_argument("state", help="The acronym for the patient's state, e.g. OH")
+	parser.add_argument("income", type=int, help="Optional value. The patient's total income rounded to the nearest dollar.",const=0,nargs='?')
 	args = parser.parse_args()
 	lat,lng = lat_lng(args.street_address,args.city,args.state)
 	county_poverty_percent = county_poverty("est16all.csv",args.state,args.county)
-	model_object = open("model",'r')
-	model = pickle.load(model_object)
-	print model.predict(np.reshape([county_poverty_percent, args.age, args.household_Size, args.us_citizen, lat, lng],(1,-1)))
+	if args.income > 0: 
+		model_object = open("model_with_income",'r')
+		model = pickle.load(model_object)
+		print model.predict(np.reshape([county_poverty_percent, args.age, args.household_Size, args.us_citizen, lat, lng, args.income],(1,-1)))
+	else:
+		model_object = open("model",'r')
+		model = pickle.load(model_object)
+		print model.predict(np.reshape([county_poverty_percent, args.age, args.household_Size, args.us_citizen, lat, lng],(1,-1)))
 	model_object.close()
 
 

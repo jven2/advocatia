@@ -97,8 +97,8 @@ split_arrs(feature_arr, value_arr)
     Returns a tuple containing training and testing subsets of both arrays.
 """
 def split_arrs(feature_arr, value_arr):
-    feature_train_arr, feature_test_arr = np.split(feature_arr,[4800])
-    value_train_arr, value_test_arr = np.split(value_arr,[4800])
+    feature_train_arr, feature_test_arr = np.split(feature_arr,[5786])
+    value_train_arr, value_test_arr = np.split(value_arr,[5786])
     return (feature_train_arr, value_train_arr, feature_test_arr, value_test_arr)
 
 def preprocess_data(arr_tuple):
@@ -159,7 +159,7 @@ def logreg_model(arr_tuple):
 def knregressor(arr_tuple):
     neigh = KNeighborsRegressor(n_neighbors = 7)
     neigh.fit(arr_tuple[0],arr_tuple[1])
-    file_Name = "model"
+    file_Name = "model_with_income"
     fileObject = open(file_Name, 'wb')
     pickle.dump(neigh,fileObject)
     fileObject.close()
@@ -184,8 +184,8 @@ def run_regressions(adv_data_df, county_level_df):
 
 def main():
     adv_data_df,county_level_df = load_data("newvals.csv", "est16all.csv")
-    run_classifiers(adv_data_df, county_level_df)
-    #run_regressions(adv_data_df, county_level_df)
+    #run_classifiers(adv_data_df, county_level_df)
+    run_regressions(adv_data_df, county_level_df)
 
 
 

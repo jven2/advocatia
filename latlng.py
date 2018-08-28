@@ -25,7 +25,7 @@ def load_adv_data(adv_data_name):
 	return adv_data_df
 
 def main():
-	gmaps = googlemaps.Client(key='AIzaSyBuHPwVk8twRke7pX2fg26lGQLjq1y7Myw')
+	gmaps = googlemaps.Client(key='')
 	adv_data_df = load_data("10KData+Address.csv")
 	lat_arr = np.zeros((adv_data_df.shape[0],1),np.float32)
 	lng_arr = np.zeros((adv_data_df.shape[0],1),np.float32)
