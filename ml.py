@@ -1,15 +1,9 @@
 import numpy as np
 import pandas as pd
 import pickle
-from sklearn import linear_model
-from sklearn.naive_bayes import GaussianNB
-from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn import preprocessing
-from sklearn.ensemble import RandomForestClassifier
 
 """
 load_data(adv_data_name, county_level_name)
@@ -33,22 +27,6 @@ def load_adv_data(adv_data_name):
     adv_data_df = pd.read_csv(adv_data_name)
     adv_data_df = adv_data_df.sample(frac=1)
     return adv_data_df
-
-"""
-create_coord_array(adv_data_df)
-Uses the coordinate data in the Advocatia dataset to create a plot of location vs medicaid eligibility
-"""
-def create_coord_array(adv_data_df):
-    val_arr = np.zeros((adv_data_df.shape[0],4))
-    val_arr[:,0]=adv_data_df["lat"]
-    val_arr[:,1]=adv_data_df["lng"]
-    val_arr[:,2]=adv_data_df["MedicaidEligible"]
-    val_arr[:,3]=adv_data_df["AgeAsOfNow"]
-    val_arr = val_arr[~np.isnan(val_arr).any(axis=1)]
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(val_arr[:,0],val_arr[:,1],val_arr[:,2], c=val_arr[:,3], marker='.')
-    plt.show()
 
 """
 load_county_data(county_level_name)
@@ -97,46 +75,21 @@ split_arrs(feature_arr, value_arr)
     Returns a tuple containing training and testing subsets of both arrays.
 """
 def split_arrs(feature_arr, value_arr):
-    feature_train_arr, feature_test_arr = np.split(feature_arr,[5786])
-    value_train_arr, value_test_arr = np.split(value_arr,[5786])
+    feature_train_arr, feature_test_arr = np.split(feature_arr,[feature_arr.shape[0]-1])
+    value_train_arr, value_test_arr = np.split(value_arr,[value_arr.shape[0]-1])
     return (feature_train_arr, value_train_arr, feature_test_arr, value_test_arr)
+
+def split_arrs_test(feature_arr, value_arr):
+    feature_train_arr, feature_test_arr = np.split(feature_arr,[4700])
+    value_train_arr, value_test_arr = np.split(value_arr,[4700])
+    return (feature_train_arr, value_train_arr, feature_test_arr, value_test_arr)
+
 
 def preprocess_data(arr_tuple):
     scaler = preprocessing.StandardScaler().fit(arr_tuple[0].astype('float'))
     scaled_train=scaler.transform(arr_tuple[0].astype('float'))
     scaled_test=scaler.transform(arr_tuple[2].astype('float'))
-    return (scaled_train,arr_tuple[1].astype('int'),scaled_test,arr_tuple[3].astype('int'))
-
-def logisticregression_model(arr_tuple):
-    logreg = linear_model.LogisticRegression()
-    logreg.fit(arr_tuple[0].astype('int'),arr_tuple[1].astype('int'))
-    score = logreg.score(arr_tuple[2].astype('int'),arr_tuple[3].astype('int'))
-    return score
-
-def gaussian_naive_bayes(arr_tuple):
-    gnb = GaussianNB()
-    gnb.fit(arr_tuple[0].astype('float'),arr_tuple[1].astype('float'))
-    score = gnb.score(arr_tuple[2].astype('float'),arr_tuple[3].astype('float'))
-    print "Class priors: " + str(gnb.class_prior_)
-    return score
-
-def sgd_model(arr_tuple):
-    sgd = linear_model.SGDClassifier(loss="hinge",penalty="l2", max_iter = 20000, tol = 1e-3, random_state=9, alpha=1e-5)
-    sgd.fit(arr_tuple[0].astype('int'),arr_tuple[1].astype('int'))
-    score = sgd.score(arr_tuple[2].astype('int'),arr_tuple[3].astype('int'))
-    print "SGD Coefficients: " + str(sgd.coef_)
-    print "SGD n_iter: " + str(sgd.n_iter_)
-    return score
-
-"""
-Creates a 3D visualization of the datapoints
-"""
-def plot_visualization(feature_arr, value_arr):
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    for idx, row in enumerate(feature_arr):
-        ax.scatter(row[3],row[0],row[2], c=str(value_arr[idx]), marker='.')
-    plt.show()
+    return (scaled_train,arr_tuple[1].astype('int'),scaled_test,arr_tuple[3].astype('int')), scaler
 
 def knn_model(arr_tuple):
     neigh=KNeighborsClassifier(n_neighbors=13)
@@ -144,46 +97,32 @@ def knn_model(arr_tuple):
     score = neigh.score(arr_tuple[2].astype('float'),arr_tuple[3].astype('float'))
     return score
 
-def rfc_model(arr_tuple):
-    clf = RandomForestClassifier()
-    clf.fit(arr_tuple[0],arr_tuple[1])
-    score = clf.score(arr_tuple[2],arr_tuple[3])
-    return score
-
-def logreg_model(arr_tuple):
-    lr = linear_model.LinearRegression()
-    lr.fit(arr_tuple[0],arr_tuple[1])
-    print lr.coef_
-    print lr.score(arr_tuple[2],arr_tuple[3])
-
-def knregressor(arr_tuple):
-    neigh = KNeighborsRegressor(n_neighbors = 7)
+def knregressor(arr_tuple, scaler):
+    neigh = KNeighborsRegressor(n_neighbors = 13)
     neigh.fit(arr_tuple[0],arr_tuple[1])
-    file_Name = "model_with_income"
+    file_Name = "model.pkl"
     fileObject = open(file_Name, 'wb')
-    pickle.dump(neigh,fileObject)
+    pickle.dump((neigh,scaler),fileObject)
     fileObject.close()
 
 def run_classifiers(adv_data_df, county_level_df):
     feature_arr = create_feature_arr(adv_data_df, county_level_df)
     value_arr = create_value_arr(adv_data_df)
-    arr_tuple = split_arrs(feature_arr, value_arr)
-    arr_tuple = preprocess_data(arr_tuple)
+    arr_tuple = split_arrs_test(feature_arr, value_arr)
+    arr_tuple, scaler = preprocess_data(arr_tuple)
     print "KNN score: " + str(knn_model(arr_tuple))
-    print "SGD score: " + str(sgd_model(arr_tuple))
     print np.sum(arr_tuple[3])
 
 def run_regressions(adv_data_df, county_level_df):
     feature_arr = create_feature_arr(adv_data_df, county_level_df)
     value_arr = create_value_arr(adv_data_df)
     arr_tuple = split_arrs(feature_arr, value_arr)
-    arr_tuple = preprocess_data(arr_tuple)
-    logreg_model(arr_tuple)
-    knregressor(arr_tuple)
+    arr_tuple, scaler = preprocess_data(arr_tuple)
+    knregressor(arr_tuple, scaler)
 
 
 def main():
-    adv_data_df,county_level_df = load_data("newvals.csv", "est16all.csv")
+    adv_data_df,county_level_df = load_data("data_with_latlng.csv", "est16all.csv")
     #run_classifiers(adv_data_df, county_level_df)
     run_regressions(adv_data_df, county_level_df)
 

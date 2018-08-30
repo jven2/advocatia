@@ -41,7 +41,7 @@ def main():
 		time.sleep(0.02)
 	adv_data_df = adv_data_df.assign(lat=lat_arr)
 	adv_data_df = adv_data_df.assign(lng=lng_arr)
-	adv_data_df.to_csv('newvals.csv')
+	adv_data_df.to_csv('data_with_latlng.csv')
 
 
 if __name__ == "__main__":
